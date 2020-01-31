@@ -1,5 +1,7 @@
 import os
 import time
+import uuid
+import sys
 
 import geohash
 
@@ -130,13 +132,14 @@ class Search(BaseHelper):
     MAX_MEANINGFUL = 10
 
     def __init__(self, match_all=False, fuzzy=1, limit=10, autocomplete=True,
-                 verbose=False):
+                 verbose=True):
         super().__init__(verbose=verbose)
         self.match_all = match_all
         self.fuzzy = fuzzy
         self.wanted = limit
         self.autocomplete = autocomplete
-        self.pid = os.getpid()  # Unique id for tmp values in redis.
+        self.pid = "{}-{}".format(uuid.uuid4(), os.getpid())  # Unique id for tmp values in redis.
+        sys.stdout.write("######### {} ###########\n".format(self.pid))
 
     def __call__(self, query, lat=None, lon=None, **filters):
         self.lat = lat
