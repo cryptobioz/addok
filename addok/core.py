@@ -323,7 +323,7 @@ class Reverse(BaseHelper):
                 processor(self, result)
             self.results.append(result)
             self.debug(result, result.distance, result.score)
-        self.results.sort(key=lambda r: r.score, reverse=True)
+        self.results.sort(key=lambda r: r.distance, reverse=False)
         return self.results[:self.wanted]
 
 
