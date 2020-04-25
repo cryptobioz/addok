@@ -1,3 +1,6 @@
+import time
+from prometheus_client import Gauge
+
 from addok.config import config
 from addok.db import DB, RedisProxy
 from addok.helpers import keys
@@ -39,6 +42,13 @@ class DSProxy:
 _DB = RedisProxy()
 DS = DSProxy()
 
+average_upsert_duration_metric = Gauge("addok_average_upsert_duration", "Average upsert duration")
+total_upsert_duration_raw_metric = 0
+upsert_count_raw_metric = 0
+
+average_remove_duration_metric = Gauge("addok_average_remove_duration", "Average remove duration")
+total_remove_duration_raw_metric = 0
+remove_count_raw_metric = 0
 
 @config.on_load
 def on_load():
@@ -71,9 +81,21 @@ def store_documents(docs):
             to_upsert.append((key, config.DOCUMENT_SERIALIZER.dumps(doc)))
         yield doc
     if to_remove:
+        start = time.time()
         DS.remove(*to_remove)
+        end = time.time()
+        remove_count_raw_metric += 1
+        total_remove_duration_raw_metric += (end - start)/len(to_remove)
+        average_remove_duration_metric.set(total_remove_duration_raw_metric/remove_count_raw_metric)
     if to_upsert:
+        start = time.time()
         DS.upsert(*to_upsert)
+        end = time.time()
+        upsert_count_raw_metric += 1
+        total_upsert_duration_raw_metric += (end - start)/len(to_upsert)
+        average_upsert_duration_metric.set(total_upsert_duration_raw_metric/upsert_count_raw_metric)
+
+
 
 
 def get_document(key):
