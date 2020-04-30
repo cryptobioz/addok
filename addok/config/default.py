@@ -90,7 +90,7 @@ REVERSE_RESULT_PROCESSORS_PYPATHS = [
     'addok.helpers.results.score_by_geo_distance',
 ]
 RESULTS_FORMATTERS_PYPATHS = [
-    'addok.helpers.formatters.geojson',
+    'addok.helpers.formatters.geojson_with_names',
 ]
 INDEXERS_PYPATHS = [
     'addok.helpers.index.HousenumbersIndexer',

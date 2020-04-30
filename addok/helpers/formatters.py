@@ -26,3 +26,8 @@ def geojson(result):
         },
         "properties": properties,
     }
+
+def geojson_with_names(result):
+    geojson_with_names = geojson(result)
+    geojson_with_names["properties"]["names"] = result._doc.get('name')
+    return geojson_with_names

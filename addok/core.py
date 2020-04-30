@@ -51,10 +51,7 @@ class Result:
         if key not in self._cache:
             # By convention, in case of multiple values, first value is default
             # value, others are aliases.
-            if(key == config.NAME_FIELD):
-                value = self._rawattr(key)
-            else:
-                value = self._rawattr(key)[0]
+            value = self._rawattr(key)[0]
             self._cache[key] = value
         return self._cache[key]
 
