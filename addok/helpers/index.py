@@ -1,5 +1,6 @@
 import geohash
 import redis
+import time
 
 from addok.config import config
 from addok.db import DB
@@ -53,7 +54,10 @@ def deindex_token(key, token):
 
 
 def index_documents(docs):
+    start = time.time()
     pipe = DB.pipeline(transaction=False)
+    #[deindex_document(get_document(keys.document_key(doc['_id']).encode())) for doc in docs if '_action' in doc and doc['_action'] in ['delete', 'update'] and get_document(keys.document_key(doc['_id']).encode())]
+    #[index_document(pipe, doc) for doc in docs if '_action' in doc and doc['_action'] in ['index', 'update', None]]
     for doc in docs:
         if not doc:
             continue
@@ -70,7 +74,9 @@ def index_documents(docs):
     except redis.RedisError as e:
         msg = 'Error while importing document:\n{}\n{}'.format(doc, str(e))
         raise ValueError(msg)
-
+    end = time.time()
+    print("INDEX: {}".format(end - start))
+    return docs
 
 def index_document(pipe, doc, **kwargs):
     key = keys.document_key(doc['_id'])
@@ -160,21 +166,28 @@ class HousenumbersIndexer:
 
     @staticmethod
     def index(pipe, key, doc, tokens, **kwargs):
+        start = time.time()
         housenumbers = doc.get('housenumbers', {})
         for number, data in housenumbers.items():
             index_geohash(pipe, key, data['lat'], data['lon'])
+        end = time.time()
+        print("HousenumbersIndexer INDEX: {}".format(end - start))
 
     @staticmethod
     def deindex(db, key, doc, tokens, **kwargs):
+        start = time.time()
         housenumbers = doc.get('housenumbers', {})
         for token, data in housenumbers.items():
             deindex_geohash(key, data['lat'], data['lon'])
+        end = time.time()
+        print("HousenumbersIndexer DEINDEX: {}".format(end - start))
 
 
 class FiltersIndexer:
 
     @staticmethod
     def index(pipe, key, doc, tokens, **kwargs):
+        start = time.time()
         for name in config.FILTERS:
             values = doc.get(name)
             if values:
@@ -186,9 +199,13 @@ class FiltersIndexer:
         if "type" in config.FILTERS and config.HOUSENUMBERS_FIELD \
            and doc.get(config.HOUSENUMBERS_FIELD):
             pipe.sadd(keys.filter_key("type", "housenumber"), key)
+        end = time.time()
+        print("FiltersIndexer INDEX: {}".format(end - start))
+
 
     @staticmethod
     def deindex(db, key, doc, tokens, **kwargs):
+        start = time.time()
         for name in config.FILTERS:
             values = doc.get(name)
             if values:
@@ -198,6 +215,8 @@ class FiltersIndexer:
                     db.srem(keys.filter_key(name, value), key)
         if "type" in config.FILTERS:
             db.srem(keys.filter_key("type", "housenumber"), key)
+        end = time.time()
+        print("FiltersIndexer DEINDEX: {}".format(end - start))
 
 
 @yielder

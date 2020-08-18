@@ -58,21 +58,29 @@ def on_load():
 
 
 def store_documents(docs):
-    to_upsert = []
-    to_remove = []
+    #to_upsert = []
+    #to_remove = []
     start = time.time()
-    for doc in docs:
-        print(doc)
-        if not doc:
-            continue
-        if '_id' not in doc:
-            doc['_id'] = DB.next_id()
-        key = keys.document_key(doc['_id'])
-        if doc.get('_action') in ['delete', 'update']:
-            to_remove.append(key)
-        if doc.get('_action') in ['index', 'update', None]:
-            to_upsert.append((key, config.DOCUMENT_SERIALIZER.dumps(doc)))
-        yield doc
+    #for doc in docs:
+    #    if not doc:
+    #        continue
+    #    if '_id' not in doc:
+    #        doc['_id'] = DB.next_id()
+    formatted_docs = [x for x in docs if "_id" not in x and x is not None and x.__setitem__('_id', DB.next_id()) is None]
+    to_remove = [keys.document_key(doc['_id']) for doc in formatted_docs if '_action' in doc and doc['_action'] in ['delete', 'update']]
+    to_upsert = [(keys.document_key(doc['_id']), config.DOCUMENT_SERIALIZER.dumps(doc)) for doc in formatted_docs if '_action' in doc and doc['_action'] in ['index', 'update', None]]
+    #for doc in docs:
+    #    print(doc)
+    #    if not doc:
+    #        continue
+    #    if '_id' not in doc:
+    #        doc['_id'] = DB.next_id()
+    #    key = keys.document_key(doc['_id'])
+    #    #if doc.get('_action') in ['delete', 'update']:
+    #    #    to_remove.append(key)
+    #    if doc.get('_action') in ['index', 'update', None]:
+    #        to_upsert.append((key, config.DOCUMENT_SERIALIZER.dumps(doc)))
+    #    yield doc
     end = time.time()
     print("\nGET: {}".format(end - start))
     if to_remove:
@@ -80,11 +88,16 @@ def store_documents(docs):
         DS.remove(*to_remove)
         end = time.time()
         print("REMOVE : {}".format(end - start))
+        start = time.time()
+        
+        end = time.time()
+        print("DEINDEX: {}".format(end - start))
     if to_upsert:
         start = time.time()
         DS.upsert(*to_upsert)
         end = time.time()
         print("UPSERT: {}".format(end - start))
+    return formatted_docs
 
 
 def get_document(key):
