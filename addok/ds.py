@@ -1,6 +1,7 @@
 from addok.config import config
 from addok.db import DB, RedisProxy
 from addok.helpers import keys
+import time
 
 
 class RedisStore:
@@ -59,7 +60,9 @@ def on_load():
 def store_documents(docs):
     to_upsert = []
     to_remove = []
+    start = time.time()
     for doc in docs:
+        print(doc)
         if not doc:
             continue
         if '_id' not in doc:
@@ -70,10 +73,18 @@ def store_documents(docs):
         if doc.get('_action') in ['index', 'update', None]:
             to_upsert.append((key, config.DOCUMENT_SERIALIZER.dumps(doc)))
         yield doc
+    end = time.time()
+    print("\nGET: {}".format(end - start))
     if to_remove:
+        start = time.time()
         DS.remove(*to_remove)
+        end = time.time()
+        print("REMOVE : {}".format(end - start))
     if to_upsert:
+        start = time.time()
         DS.upsert(*to_upsert)
+        end = time.time()
+        print("UPSERT: {}".format(end - start))
 
 
 def get_document(key):
