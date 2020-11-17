@@ -139,7 +139,6 @@ class Search(BaseHelper):
         self.wanted = limit
         self.autocomplete = autocomplete
         self.pid = "{}-{}".format(uuid.uuid4(), os.getpid())  # Unique id for tmp values in redis.
-        sys.stdout.write("######### {} ###########\n".format(self.pid))
 
     def __call__(self, query, lat=None, lon=None, **filters):
         self.lat = lat
